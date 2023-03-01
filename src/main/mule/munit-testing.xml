@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:db="http://www.mulesoft.org/schema/mule/db"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="c874c295-4140-47f7-ade6-9130d6bd4d70" >
+		<http:listener-connection host="localhost" port="8081" />
+	</http:listener-config>
+	<db:config name="Database_Config" doc:name="Database Config" doc:id="0a1a456f-ffac-4cec-9c43-23f318d1c7ca" >
+		<db:my-sql-connection host="localhost" port="3306" user="root" password="No217353" database="world" />
+	</db:config>
+	<flow name="munit-testingFlow" doc:id="49ff6f86-8102-4dd2-9e5d-80e8a2680dba" >
+		<http:listener doc:name="Listener" doc:id="3dfc802c-9973-42ff-9c63-3700c68bb6c9" config-ref="HTTP_Listener_config" path="/munit"/>
+		<db:select doc:id="82f8c5f7-c97f-42d9-b13e-23eab9c6a1b2" config-ref="Database_Config">
+			<db:sql ><![CDATA[select * from city where id < :id and CountryCode = :cc]]></db:sql>
+			<db:input-parameters ><![CDATA[#[{'id':attributes.queryParams.'id','cc':attributes.headers.'CountryCode'}]]]></db:input-parameters>
+		</db:select>
+		<choice doc:name="Choice" doc:id="5070257f-080a-45d3-89ee-8977bd617e33" >
+			<when expression="#[sizeOf(payload)&gt;0]">
+				<ee:transform doc:name="Transform Message" doc:id="5f06c08a-240f-4efc-ad14-4b4e3d5c7c14" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</when>
+			<otherwise >
+				<ee:transform doc:name="Transform Message" doc:id="8d6cded6-23fd-463e-b516-81346088f59e" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+"No Records Found"]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</otherwise>
+		</choice>
+	</flow>
+</mule>
